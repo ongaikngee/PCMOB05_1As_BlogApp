@@ -1,43 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import { Button, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-
-const API = 'https://ongaikngee.pythonanywhere.com';
-const API_WHOAMI = '/whoami';
+import { useUsername } from '../hooks/useAPI';
 
 export default function AccountScreen({ navigation }) {
 	const [ username, setUsername ] = useState('');
+	const getUsernamefromAPI = useUsername(signOut);
 
 	async function getUsername() {
-
-    //get my token
-    //send it to the API and save the user name
-    //if succeed, we will display the user name, 
-    //if error....do nothing
-		console.log('---- Getting user name ----');
-		const token = await AsyncStorage.getItem('token');
-		console.log(`Token is ${token}`);
-		try {
-			const response = await axios.get(API + API_WHOAMI, {
-				headers: { Authorization: `JWT ${token}` }
-			});
-			console.log('Got user name!');
-			console.log(response);
-			setUsername(response.data.username);
-		} catch (error) {
-			console.log('Error getting user name');
-			if (error.response) {
-				console.log(error.response.data);
-			} else {
-				console.log(error);
-			}
-		}
+		const namefromAPI = await getUsernamefromAPI();
+		setUsername(namefromAPI);
 	}
 
 	useEffect(() => {
+		console.log('Setting up nav listener');
+		// Check for when we come back to this screen
+		const removeListener = navigation.addListener('focus', () => {
+			console.log('Running nav listener');
+			setUsername(<ActivityIndicator />);
+			getUsername();
+		});
 		getUsername();
+
+		return removeListener;
 	}, []);
 
 	function signOut() {
