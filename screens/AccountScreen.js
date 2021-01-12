@@ -1,43 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { Button, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
-import { commonStyles } from '../styles/commonStyles';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUsername } from '../hooks/useAPI';
+import React, { useState, useEffect } from "react";
+import {
+  ActivityIndicator,
+  Button,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { commonStyles } from "../styles/commonStyles";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useUsername } from "../hooks/useAPI";
 
 export default function AccountScreen({ navigation }) {
-	const [ username, setUsername ] = useState('');
-	const getUsernamefromAPI = useUsername(signOut);
+  const [username, loading, error, refresh] = useUsername();
 
-	async function getUsername() {
-		const namefromAPI = await getUsernamefromAPI();
-		setUsername(namefromAPI);
-	}
+  // signs out if the useUsername hook returns error as true
+  useEffect(() => {
+    if (error) {
+      signOut();
+    }
+  }, [error]);
 
-	useEffect(() => {
-		console.log('Setting up nav listener');
-		// Check for when we come back to this screen
-		const removeListener = navigation.addListener('focus', () => {
-			console.log('Running nav listener');
-			setUsername(<ActivityIndicator />);
-			getUsername();
-		});
-		getUsername();
+  useEffect(() => {
+    const removeListener = navigation.addListener("focus", () => {
+      refresh(true);
+    });
+    return removeListener;
+  }, []);
 
-		return removeListener;
-	}, []);
+  function signOut() {
+    AsyncStorage.removeItem("token");
+    navigation.navigate("SignIn");
+  }
 
-	function signOut() {
-		AsyncStorage.removeItem('token');
-		navigation.navigate('SignIn');
-	}
-
-	return (
-		<View style={commonStyles.container}>
-			<Text>Account Screen</Text>
-			<Text>{username}</Text>
-			<Button title="Sign out" onPress={signOut} />
-		</View>
-	);
+  return (
+    <View style={commonStyles.container}>
+      <Text>Account Screen</Text>
+      {loading ? <ActivityIndicator /> : <Text>{username}</Text>}
+      <Button title="Sign out" onPress={signOut} />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({});
