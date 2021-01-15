@@ -10,66 +10,21 @@ import {
   Keyboard,
   ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-
-const API = "https://ongaikngee.pythonanywhere.com";
-const API_LOGIN = "/auth";
-const API_SIGNUP = "/newuser";
+import { useAuth } from "../hooks/useAPI.js";
+import { useDispatch } from "react-redux";
+import { signInAction } from "../redux/ducks/blogAuth";
 
 export default function SignInSignUpView({ navigation, isSignIn }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [errorText, setErrorText] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function signup() {
-    console.log("---- Signing up ----");
-    Keyboard.dismiss();
-
-    try {
-      setLoading(true);
-      response = await axios.post(API + API_SIGNUP, {
-        username,
-        password,
-      });
-      if (response.data.Error === "User already exists") {
-        setErrorText("This user exists");
-        setLoading(false);
-        return;
-      }
-      console.log("Success signing up!");
-      login();
-    } catch (error) {
-      setLoading(false);
-      console.log("Error signing up!");
-      console.log(error.response);
-      setErrorText(error.response.data.description);
+  const dispatch = useDispatch();
+  const [login, signup, loading, errorText] = useAuth(
+    username,
+    password,
+    () => {
+      dispatch(signInAction()); // function to be run on successful login
     }
-  }
-
-  async function login() {
-    console.log("---- Login time ----");
-    Keyboard.dismiss();
-
-    try {
-      setLoading(true);
-      const response = await axios.post(API + API_LOGIN, {
-        username,
-        password,
-      });
-      console.log("Success logging in!");
-      // console.log(response);
-      await AsyncStorage.setItem("token", response.data.access_token);
-      setLoading(false);
-      navigation.navigate("Account");
-    } catch (error) {
-      setLoading(false);
-      console.log("Error logging in!");
-      console.log(error.response);
-      setErrorText(error.response.data.description);
-    }
-  }
+  );
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
